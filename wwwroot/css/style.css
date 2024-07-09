@@ -1,0 +1,239 @@
+﻿body {
+    background-color: #f8f9fa;
+    background-image: url('https://www.transparenttextures.com/patterns/escheresque.png');
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.chat-area {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+    height: 400px;
+    overflow-y: auto;
+    padding: 1px;
+    margin-bottom: 20px;
+    background-color: #f8f9fa;
+    background-image: url('https://www.transparenttextures.com/patterns/escheresque.png');
+}
+
+.chat-message {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    max-width: 80%;
+    word-wrap: break-word;
+}
+
+.user-message {
+    background-color: #d1e7dd;
+    text-align: right;
+    margin-left: auto;
+}
+
+.bot-message {
+    background-color: #f8d7da;
+    text-align: left;
+    margin-right: auto;
+}
+
+    .bot-message code {
+        display: block;
+        padding: 10px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+    }
+
+    .bot-message .highlight-code {
+        cursor: pointer;
+        color: #007bff;
+        text-decoration: underline;
+    }
+
+.query-results-container {
+    position: relative;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-top: 20px;
+    overflow-y: auto;
+    max-height: 300px;
+    transition: max-height 0.5s ease;
+    background-color: #ffffff;
+    background-image: url('https://www.transparenttextures.com/patterns/asfalt-dark.png');
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.query-results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
+
+.query-results {
+    overflow-x: auto;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.maximized {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    z-index: 9999;
+    background-color: white;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    resize: both;
+    overflow: auto;
+    max-height: calc(100vh - 200px);
+}
+
+    .maximized .query-results {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .maximized #toggleResultsBtn {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+    }
+
+.branding {
+    text-align: center;
+    margin: 20px 0;
+    font-size: 3rem;
+    font-family: 'Great Vibes', cursive;
+    color: #007bff;
+    position: relative;
+    z-index: 1;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    animation: glow 1.5s infinite alternate;
+}
+
+    .branding::after {
+        content: '';
+        background: url('https://www.transparenttextures.com/patterns/diagmonds-light.png');
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        opacity: 0.3;
+    }
+@keyframes glow-animation {
+    0% {
+        text-shadow: 0 0 5px rgba(0, 123, 255, 1), 0 0 10px rgba(0, 123, 255, 1), 0 0 15px rgba(0, 123, 255, 1), 0 0 20px rgba(0, 123, 255, 1);
+    }
+
+    100% {
+        text-shadow: 0 0 10px rgba(0, 123, 255, 0.5), 0 0 20px rgba(0, 123, 255, 0.5), 0 0 30px rgba(0, 123, 255, 0.5), 0 0 40px rgba(0, 123, 255, 0.5);
+    }
+}
+
+/* Loader Styles */
+.loader-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.loader {
+    border: 4px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 4px solid #007bff;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.card {
+    background-color: #f8f9fa; /* Set the same background color as body */
+    background-image: url('https://www.transparenttextures.com/patterns/escheresque.png'); /* Set the same background image as body */
+    font-family: 'Arial, sans-serif'; /* Set the font family for the card content */
+    color: #333333; /* Set the font color for the card content */
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5); /* Add a glow effect to the border */
+    transition: box-shadow 0.3s ease-in-out;
+    padding: 20px; /* Adjust the padding inside the card */
+    margin-bottom: 20px; /* Add some space between cards */
+}
+
+    .card:hover {
+        box-shadow: 0 0 20px rgba(0, 123, 255, 0.7); /* Enhance the glow effect on hover */
+    }
+
+.card-title {
+    font-family: 'Georgia, serif'; /* Set a different font family for card titles */
+    font-size: 1.5rem; /* Set the font size for card titles */
+    color: #007bff; /* Set the font color for card titles */
+    margin-bottom: 15px; /* Add some space below the title */
+}
+
+.card-body {
+    padding: 20px; /* Ensure consistent padding inside the card body */
+}
+
+h2.card-title {
+    font-family: 'Dancing Script', cursive;
+    font-size: 2rem;
+}
+
+/* Additional CSS for Error Popup */
+.error-popup {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px;
+    background-color: #f8d7da;
+    border: 1px solid #f5c2c7;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    display: none;
+}
+
+    .error-popup .close-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        float: right;
+        cursor: pointer;
+    }
+
+/* CSS for Auto-Expanding Textarea */
+#userQuery {
+    resize: vertical; /* Disable manual resizing */
+    overflow: hidden; /* Hide the scrollbar */
+}

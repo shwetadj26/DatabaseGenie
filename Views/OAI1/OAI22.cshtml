@@ -1,0 +1,243 @@
+﻿@{
+    ViewData["Title"] = "OAI Page";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/style.css" />
+</head>
+<body>
+    <div class="container-fluid h-auto">
+        <div class="branding">Database Genie</div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h2 class="card-title">Ask Your Database</h2>
+                        <div id="chatArea" class="chat-area">
+                            <div class="chat-message bot-message">
+                                <strong>Genie:</strong> Welcome! Start by entering your prompt.
+                            </div>
+                        </div>
+                        <form id="userQueryForm" class="mt-3">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="userQuery" placeholder="Enter your prompt..." required>
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i></button>
+                                </div>
+                            </div>
+                        </form>
+                        <div id="loaderQueryGenerator" class="loader"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h2 class="card-title">SQL Query Studio</h2>
+                        <form id="executeSqlForm">
+                            <div class="form-group">
+                                <label for="sqlQuery">SQL Query:</label>
+                                <textarea class="form-control" id="sqlQuery" rows="8" required></textarea>
+                                <small id="validationMessage">Only SELECT queries are allowed.</small>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-block"><i class="fas fa-play"></i> Execute SQL Query</button>
+                        </form>
+                        <hr>
+                        <div class="query-results-container">
+                            <div class="query-results-header">
+                                <span>SQL Query Results</span>
+                                <button id="toggleResultsBtn" class="btn btn-sm btn-outline-primary float-right">Maximize</button>
+                            </div>
+                            <div id="queryResults" class="query-results"></div>
+                        </div>
+                        <div id="loaderSqlQuery" class="loader"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="error-popup" id="errorPopup">
+        <button class="close-btn" id="closeErrorPopup">&times;</button>
+        <p id="errorMessage"></p>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#userQueryForm').submit(function (event) {
+                event.preventDefault();
+                var userQuery = $('#userQuery').val().trim();
+                if (userQuery === '') return;
+                $('#loaderQueryGenerator').show();
+                addMessage(userQuery, true);
+                $.post('/OAI/GetSqlQuery', { userQuery: userQuery }, function (data) {
+                    var botResponse = data.sqlQuery;
+                    addMessage(botResponse);
+                    $('#chatArea .bot-message code').each(function (i, block) {
+                        hljs.highlightBlock(block);
+                    });
+                }).fail(function (xhr, status, error) {
+                    showErrorPopup('Error generating SQL query. Please try again.');
+                }).always(function () {
+                    $('#loaderQueryGenerator').hide();
+                });
+                $('#userQuery').val('');
+            });
+
+            $('#executeSqlForm').submit(function (event) {
+                event.preventDefault();
+                var sqlQuery = $('#sqlQuery').val().trim();
+                if (sqlQuery === '') return;
+                if (!isValidSelectQuery(sqlQuery)) {
+                    $('#validationMessage').text('Only SELECT queries are allowed.');
+                    return;
+                }
+                $('#loaderSqlQuery').show();
+                $.post('/OAI/ExecuteSqlQuery', { sqlQuery: sqlQuery }, function (data) {
+                    generateTable(data);
+                    $('.query-results-container').show();
+                }).fail(function (xhr, status, error) {
+                    console.error('Error executing SQL query:', error);
+                    showErrorPopup('Error generating SQL query. Please try again:' + error);
+                }).always(function () {
+                    $('#loaderSqlQuery').hide();
+                });
+            });
+
+            $('#toggleResultsBtn').click(function () {
+                var container = $('.query-results-container');
+                container.toggleClass('maximized');
+                var isMaximized = container.hasClass('maximized');
+                $('#toggleResultsBtn').text(isMaximized ? 'Minimize' : 'Maximize');
+
+                if (isMaximized) {
+                    $('body').css('overflow', 'hidden');
+                    $('#queryResults').css('max-width', '100vw');
+                    $('html, body').animate({ scrollTop: 0 }, 'fast');
+                    $(document).on('keydown', handleEscKey);
+                    alert('Press Esc key to minimize.');
+                    $('.maximized').resizable({
+                        handles: 's',
+                        minHeight: 100
+                    });
+                } else {
+                    $('body').css('overflow', 'auto');
+                    $('#queryResults').css('max-width', '100%');
+                    $(document).off('keydown', handleEscKey);
+                    $('.maximized').resizable('destroy');
+                }
+            });
+
+            // Function to add message handling for bot responses
+            function addMessage(message, isUser = false) {
+                const chatBox = $('#chatArea');
+                const messageDiv = $('<div class="chat-message">');
+
+                if (isUser) {
+                    messageDiv.addClass('user-message').html('<strong>You:</strong> ' + escapeHtml(message));
+                } else {
+                    messageDiv.addClass('bot-message').html('<strong>Genie:</strong> ' + escapeHtml(message));
+                    wrapCodeBlocks(messageDiv); // Wrap code blocks with copy functionality
+                }
+
+                chatBox.append(messageDiv);
+                scrollToBottom();
+            }
+
+            // Function to wrap code blocks with copy functionality
+            function wrapCodeBlocks(messageDiv) {
+                // Regex to find code blocks
+                var codeRegex = /```([^`]+)```/g;
+                var htmlContent = messageDiv.html();
+
+                // Replace code blocks with highlighted version
+                var highlightedContent = htmlContent.replace(codeRegex, function (match, code) {
+                    var copyIcon = $('<i class="far fa-copy copy-icon"></i>');
+                    var copyButton = $('<button class="copy-button btn btn-sm btn-outline-secondary"></button>').append(copyIcon);
+
+                    copyButton.click(function () {
+                        var tempInput = $('<textarea>');
+                        $('body').append(tempInput);
+                        tempInput.val(code.trim()).select();
+                        document.execCommand('copy');
+                        tempInput.remove();
+                        copyIcon.removeClass('far fa-copy').addClass('fas fa-check-circle');
+                        setTimeout(function () {
+                            copyIcon.removeClass('fas fa-check-circle').addClass('far fa-copy');
+                        }, 2000);
+                    });
+
+                    return '<div class="highlight-code">' + '<code>' + escapeHtml(code.trim()) + '</code>' + '</div>';
+                });
+
+                messageDiv.html(highlightedContent);
+            }
+
+            function generateTable(data) {
+                var table = $('<table class="table table-bordered table-striped"></table>');
+                var thead = $('<thead></thead>');
+                var tbody = $('<tbody></tbody>');
+
+                var headerRow = $('<tr></tr>');
+                for (var columnName in data) {
+                    headerRow.append($('<th></th>').text(columnName));
+                }
+                thead.append(headerRow);
+
+                var numRows = data[Object.keys(data)[0]].length;
+                for (var i = 0; i < numRows; i++) {
+                    var bodyRow = $('<tr></tr>');
+                    for (var columnName in data) {
+                        bodyRow.append($('<td></td>').text(data[columnName][i]));
+                    }
+                    tbody.append(bodyRow);
+                }
+
+                table.append(thead).append(tbody);
+                $('#queryResults').html(table);
+            }
+
+            function scrollToBottom() {
+                $('#chatArea').scrollTop($('#chatArea')[0].scrollHeight);
+            }
+
+            function escapeHtml(text) {
+                var map = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                };
+                return text.replace(/[&<>"']/g, function (m) { return map[m]; });
+            }
+
+            function isValidSelectQuery(query) {
+                var trimmedQuery = query.trim().toLowerCase();
+                return trimmedQuery.startsWith('select');
+            }
+            $('#closeErrorPopup').click(function () {
+                $('#errorPopup').hide();
+            });
+            function showErrorPopup(message) {
+                $('#errorMessage').text(message);
+                $('#errorPopup').show();
+            }
+            function handleEscKey(event) {
+                if (event.key === 'Escape') {
+                    $('#toggleResultsBtn').click();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
